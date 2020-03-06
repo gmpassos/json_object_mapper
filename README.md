@@ -1,4 +1,4 @@
-# json_object
+# json_object_mapper
 
 A simple and easy way to map Objects to/from Map and JSON with Web support.
 
