@@ -21,7 +21,7 @@ A simple and easy way to map Objects from JSON and to Map with support for Dart 
 
 - No @annotations or code generation.
 
-- Only uses Mirrors if is available in the platform (transparent load).
+- Only uses Mirrors if it's available in the platform (transparent load).
 
 ## Usage
 
