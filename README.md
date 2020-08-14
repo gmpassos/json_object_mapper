@@ -37,7 +37,7 @@ class User extends JSONObject {
   User.fromFields(this.username, this.email);
 
   User.fromJson(String json) {
-    initializeFromJSON(json) ;
+    initializeFromJson(json) ;
   }
 
   @override
