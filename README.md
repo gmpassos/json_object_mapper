@@ -1,5 +1,16 @@
 # json_object_mapper
 
+[![pub package](https://img.shields.io/pub/v/json_object_mapper.svg?logo=dart&logoColor=00b9fc)](https://pub.dartlang.org/packages/json_object_mapper)
+[![CI](https://img.shields.io/github/workflow/status/gmpassos/json_object_mapper/Dart%20CI/master?logo=github-actions&logoColor=white)](https://github.com/gmpassos/json_object_mapper/actions)
+[![GitHub Tag](https://img.shields.io/github/v/tag/gmpassos/json_object_mapper?logo=git&logoColor=white)](https://github.com/gmpassos/json_object_mapper/releases)
+[![New Commits](https://img.shields.io/github/commits-since/gmpassos/json_object_mapper/latest?logo=git&logoColor=white)](https://github.com/gmpassos/json_object_mapper/network)
+[![Last Commits](https://img.shields.io/github/last-commit/gmpassos/json_object_mapper?logo=git&logoColor=white)](https://github.com/gmpassos/json_object_mapper/commits/master)
+[![Pull Requests](https://img.shields.io/github/issues-pr/gmpassos/json_object_mapper?logo=github&logoColor=white)](https://github.com/gmpassos/json_object_mapper/pulls)
+[![Code size](https://img.shields.io/github/languages/code-size/gmpassos/json_object_mapper?logo=github&logoColor=white)](https://github.com/gmpassos/json_object_mapper)
+[![License](https://img.shields.io/github/license/gmpassos/json_object_mapper?logo=open-source-initiative&logoColor=green)](https://github.com/gmpassos/json_object_mapper/blob/master/LICENSE)
+[![Funding](https://img.shields.io/badge/Donate-yellow?labelColor=666666&style=plastic&logo=liberapay)](https://liberapay.com/gmpassos/donate)
+[![Funding](https://img.shields.io/liberapay/patrons/gmpassos.svg?logo=liberapay)](https://liberapay.com/gmpassos/donate)
+
 A simple and easy way to map Objects to/from Map and JSON with Web support.
 
 #### Main features:

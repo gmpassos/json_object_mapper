@@ -2,56 +2,66 @@ import 'package:json_object_mapper/json_object_mapper.dart';
 import 'package:test/test.dart';
 
 class User extends JSONObject {
-  String username ;
-  String email ;
+  String username;
+  String email;
 
-  User.fromFields(this.username, this.email);
+  User.fromFields(String username, String email) {
+    this.username = username;
+    this.email = email;
+  }
 
-  User.fromJSON(String json) {
-    initializeFromJSON(json) ;
+  User.fromJson(String json) {
+    initializeFromJson(json);
   }
 
   User();
 
   @override
-  List<String> getObjectFields() {
-    return getObjectFieldsDefault() ;
-    //return ['username' , 'email'] ;
-  }
-
-  @override
   String toString() {
-    return 'User{username: $username, email: $email}' ;
+    return 'User{username: $username, email: $email}';
   }
-
 }
 
 void main() {
   group('A group of tests', () {
-
-    setUp(() {
-    });
+    setUp(() {});
 
     test('First Test', () {
+      var user1 = User.fromFields('joe', 'joe@mail.com');
+      print(
+          'User[1]: $user1 >> ${user1.getObjectFields()} = ${user1.getObjectValues()}');
 
-      User user1 = User.fromFields("joe", "joe@mail.com") ;
-      print("User[1]: $user1");
+      expect(user1.username, equals('joe'));
+      expect(user1.email, equals('joe@mail.com'));
 
-      expect( user1.username , equals('joe')) ;
-      expect( user1.email , equals('joe@mail.com')) ;
+      var json1 = user1.toJson();
+      print('JSON[1]: $json1');
 
-      var json1 = user1.toJSON();
-      print("JSON[1]: $json1");
+      expect(json1, equals('{"username":"joe","email":"joe@mail.com"}'));
 
-      expect( json1 , equals('{"username":"joe","email":"joe@mail.com"}')) ;
+      user1.setObjectValues(['joe1', 'joe1@mail.com']);
 
-      User user2 = User.fromJSON( '{"username":"joe2","email":"joe2@mail.com"}' ) ;
-      print("User[2]: $user2");
+      expect(user1.username, equals('joe1'));
+      expect(user1.email, equals('joe1@mail.com'));
 
-      expect( user2.toJSON() , equals('{"username":"joe2","email":"joe2@mail.com"}')) ;
-      expect( user2.username , equals('joe2')) ;
-      expect( user2.email , equals('joe2@mail.com')) ;
+      var json1_2 = user1.toJson();
+      print('JSON[1.2]: $json1_2');
 
+      expect(json1_2, equals('{"username":"joe1","email":"joe1@mail.com"}'));
+
+      print('-----------------------------------------');
+
+      var user2 = User.fromJson('{"username":"joe2","email":"joe2@mail.com"}');
+      print(
+          'User[2]: $user2 >> ${user2.getObjectFields()} = ${user2.getObjectValues()}');
+
+      var json2 = user2.toJson();
+      print('JSON[2]: $json2');
+
+      expect(json2, equals('{"username":"joe2","email":"joe2@mail.com"}'));
+
+      expect(user2.username, equals('joe2'));
+      expect(user2.email, equals('joe2@mail.com'));
     });
   });
 }

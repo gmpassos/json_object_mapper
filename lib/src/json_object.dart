@@ -1,48 +1,53 @@
 import 'dart:convert';
 
-import "json_object_generic.dart"
-if (dart.library.html) "json_object_html.dart"
-if (dart.library.io) "json_object_mirror.dart" ;
+import 'json_object_generic.dart'
+    if (dart.library.html) 'json_object_html.dart'
+    if (dart.library.io) 'json_object_mirror.dart';
 
+/// Base class for an [Object] that can be converted to JSON.
 abstract class JSONObject extends JSONObjectBaseImpl {
-
-  String toJSON() {
+  /// Converts [this] instance to a JSON String.
+  String toJson() {
     var jsonObject = toMap();
     var json = jsonEncode(jsonObject);
     return json;
   }
 
-  Map toMap() {
-    Map jsonMap = {} ;
+  /// Converts [this] instance to a [Map<String,dynamic>], containing
+  /// the current fields values.
+  Map<String, dynamic> toMap() {
+    var jsonMap = <String, dynamic>{};
 
-    var fields = this.getObjectFields() ;
-    var fieldsValues = this.getObjectValues() ;
+    var fields = getObjectFields();
+    var fieldsValues = getObjectValues();
 
     var fieldsValuesLength = fieldsValues.length;
 
     for (var i = 0; i < fields.length; ++i) {
       var k = fields[i];
-      var v = i < fieldsValuesLength ? fieldsValues[i] : null ;
-      jsonMap[k] = v ;
+      var v = i < fieldsValuesLength ? fieldsValues[i] : null;
+      jsonMap[k] = v;
     }
 
     return jsonMap;
   }
 
+  /// Initializes this instance from a Map.
   void initializeFromMap(Map jsonMap) {
-    var fields = this.getObjectFields() ;
+    var fields = getObjectFields();
 
-    List values = [] ;
+    var values = [];
 
     for (var k in fields) {
-      var v = jsonMap[k] ;
-      values.add(v) ;
+      var v = jsonMap[k];
+      values.add(v);
     }
 
-    this.setObjectValues(values) ;
+    setObjectValues(values);
   }
 
-  void initializeFromJSON(String json) {
+  /// Initializes this instance from a JSON String.
+  void initializeFromJson(String json) {
     var obj = jsonDecode(json);
     initializeFromMap(obj);
   }
@@ -52,10 +57,8 @@ abstract class JSONObject extends JSONObjectBaseImpl {
       identical(this, other) ||
       other is JSONObject &&
           runtimeType == other.runtimeType &&
-          toJSON() == other.toJSON();
+          toJson() == other.toJson();
 
   @override
-  int get hashCode => toJSON().hashCode;
-
+  int get hashCode => toJson().hashCode;
 }
-

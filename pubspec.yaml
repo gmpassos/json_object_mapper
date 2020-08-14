@@ -1,10 +1,10 @@
 name: json_object_mapper
 description: Simple and easy way to map Objects to/from Map and JSON with Web support.
-version: 1.0.0
+version: 1.0.1
 homepage: https://github.com/gmpassos/json_object_mapper
 
 environment:
-  sdk: '>=2.6.0 <3.0.0'
+  sdk: '>=2.8.0 <3.0.0'
 
 #dependencies:
 #  path: ^1.6.0

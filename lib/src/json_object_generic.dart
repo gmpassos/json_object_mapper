@@ -1,19 +1,16 @@
-
 import 'json_object_base.dart';
 
 abstract class JSONObjectBaseImpl extends JSONObjectBase {
-
+  @override
   List<String> getObjectFieldsDefault() {
-    return [] ;
+    return [];
   }
 
+  @override
   List getObjectValues() {
-    return [] ;
+    return [];
   }
 
-  void setObjectValues(List values) {
-
-  }
-
+  @override
+  void setObjectValues(List values) {}
 }
-
