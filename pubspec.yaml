@@ -1,5 +1,5 @@
 name: json_object_mapper
-description: Simple and easy way to map Objects to/from Map and JSON with Web support.
+description: A simple and easy way to map Objects from JSON and to Map with support for Dart Native and Dart Web.
 version: 1.0.1
 homepage: https://github.com/gmpassos/json_object_mapper
 

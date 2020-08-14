@@ -11,15 +11,17 @@
 [![Funding](https://img.shields.io/badge/Donate-yellow?labelColor=666666&style=plastic&logo=liberapay)](https://liberapay.com/gmpassos/donate)
 [![Funding](https://img.shields.io/liberapay/patrons/gmpassos.svg?logo=liberapay)](https://liberapay.com/gmpassos/donate)
 
-A simple and easy way to map Objects to/from Map and JSON with Web support.
+A simple and easy way to map Objects from JSON and to Map with support for Dart Native and Dart Web.
 
 #### Main features:
- 
-- Compatible with Web (dart2js) and VM.
 
-- No code generation.
+- Works with simple Objects: no method implementation needed.
 
-- Uses Mirrors only if available in platform (transparent load).
+- Compatible with Web (JS) and Native (VM) platforms.
+
+- No @annotations or code generation.
+
+- Only uses Mirrors if is available in the platform (transparent load).
 
 ## Usage
 
@@ -32,16 +34,10 @@ class User extends JSONObject {
   String username ;
   String email ;
 
-  User.fields(this.username, this.email);
+  User.fromFields(this.username, this.email);
 
-  User.json(String json) {
+  User.fromJson(String json) {
     initializeFromJSON(json) ;
-  }
-
-  @override
-  List<String> getObjectFields() {
-    return getObjectFieldsDefault() ;
-    //return ['username' , 'email'] ;
   }
 
   @override
@@ -53,7 +49,7 @@ class User extends JSONObject {
 
 main() {
   
-      User user1 = User.fields("joe", "joe@mail.com") ;
+      User user1 = User.fromFields("joe", "joe@mail.com") ;
       
       print("User[1]: $user1");      
       // User[1]: User{username: joe, email: joe@mail.com}
@@ -61,12 +57,12 @@ main() {
       print(user1.toJSON());
       // {"username":"joe","email":"joe@mail.com"}
 
-      User user2 = User.json( '{"username":"joe2","email":"joe2@mail.com"}' ) ;
+      User user2 = User.fromJson( '{"username":"joe2","email":"joe2@mail.com"}' ) ;
       
       print("User[2]: $user2");
       // User[2]: User{username: joe2, email: joe2@mail.com}
       
-      print(user2.toJSON());
+      print(user2.toJson());
       // {"username":"joe2","email":"joe2@mail.com"}
 
 }
