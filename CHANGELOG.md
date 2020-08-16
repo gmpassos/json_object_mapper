@@ -1,3 +1,8 @@
+## 1.1.0
+
+- Added `JSONTransformer` operations.
+- swiss_knife: ^2.5.9
+
 ## 1.0.1
 
 - Fix Browser implementation.

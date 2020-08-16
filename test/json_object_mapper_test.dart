@@ -23,10 +23,10 @@ class User extends JSONObject {
 }
 
 void main() {
-  group('A group of tests', () {
+  group('JSONObject', () {
     setUp(() {});
 
-    test('First Test', () {
+    test('Test constructors', () {
       var user1 = User.fromFields('joe', 'joe@mail.com');
       print(
           'User[1]: $user1 >> ${user1.getObjectFields()} = ${user1.getObjectValues()}');
