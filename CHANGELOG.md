@@ -1,6 +1,9 @@
 ## 1.1.1
 
+- Fix parsing of operation with empty parameters.
 - Fix `README.md`.
+- More tests.
+- test_coverage: ^0.4.2
 
 ## 1.1.0
 

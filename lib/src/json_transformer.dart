@@ -311,7 +311,7 @@ abstract class TOperation extends JSONTransformer {
     var pattern = OPS_PATTERN[name];
     if (pattern != null) return pattern;
     pattern = RegExp('^$name'
-        r'''\(\s*((?:".*?"|'.*?'|\S+?)(?:\s*,\s*(?:".*?"|'.*?'|\S+?))*)?\s*\)''');
+        r'''\(\s*((?:".*?"|'.*?'|[^\s\(\),]+?)(?:\s*,\s*(?:".*?"|'.*?'|[^\s\(\),]+?))*)?\s*\)''');
     OPS_PATTERN[name] = pattern;
     return pattern;
   }
@@ -424,7 +424,6 @@ abstract class TOperation extends JSONTransformer {
   @override
   String toString() {
     var params = parametersToString();
-
     return '$name($params)${toStringThen('.')}';
   }
 }

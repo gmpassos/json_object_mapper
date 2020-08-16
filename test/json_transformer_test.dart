@@ -102,6 +102,31 @@ void main() {
 
       expect(map, equals({3: 'z', 1: 'x'}));
     });
+
+    test('Transform: trim, uc, lc', () {
+      var json = [' a ', ' b ', ' c '];
+
+      var jsonTransformer = TTrim().then(TUpperCase());
+
+      expect(jsonTransformer.toString(), equals('trim().uc()'));
+      _expectSelfParse(jsonTransformer);
+
+      print('-----------------------------------');
+      print(jsonTransformer);
+      print(json);
+      var map = jsonTransformer.transform(json);
+      print(map);
+      expect(map, equals(['A', 'B', 'C']));
+
+      jsonTransformer.then(TLowerCase());
+
+      print('-----------------------------------');
+      print(jsonTransformer);
+      print(json);
+      var map2 = jsonTransformer.transform(json);
+      print(map2);
+      expect(map2, equals(['a', 'b', 'c']));
+    });
   });
 }
 
