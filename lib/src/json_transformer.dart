@@ -37,6 +37,35 @@ abstract class JSONTransformer {
     _registeredTransformers.putIfAbsent(type, () => this);
   }
 
+  /// Returns a [JSONTransformer] from [transformers]. Parses if needed.
+  factory JSONTransformer.from(dynamic transformers) {
+    if (transformers == null) return null;
+
+    if (transformers is JSONTransformer) return transformers;
+
+    if (transformers is String) {
+      return JSONTransformer.parse(transformers);
+    }
+
+    if (transformers is List) {
+      var list = transformers
+          .map((e) => JSONTransformer.from(e))
+          .where((e) => e != null)
+          .toList();
+
+      if (list == null || list.isEmpty) {
+        return null;
+      }
+
+      var root = list.removeAt(0);
+      root.thenChain(list);
+      return root;
+    }
+
+    return null;
+  }
+
+  /// Parses [transformers] to a [JSONTransformer] chain.
   factory JSONTransformer.parse(String transformers) {
     _registerTransformers();
 
@@ -102,6 +131,7 @@ abstract class JSONTransformer {
     return this;
   }
 
+  /// Other [JSONTransformer] to apply after this [transform].
   JSONTransformer then(JSONTransformer t1,
       [JSONTransformer t2,
       JSONTransformer t3,
@@ -118,11 +148,13 @@ abstract class JSONTransformer {
   }
 
   JSONTransformer thenChain(List<JSONTransformer> then) {
+    if (then == null || then.isEmpty) return this;
     _then ??= [];
     _then.addAll(then);
     return this;
   }
 
+  /// Transforms [json] using chain operations.
   dynamic transform(dynamic json) {
     var transform = computeTransformation(json);
     if (_then != null) {
@@ -141,11 +173,14 @@ abstract class JSONTransformer {
     return '$prefix${_then.join('.')}';
   }
 
+  /// Returns this chain of operations as [String].
   @override
   String toString();
 }
 
+/// Transforms JSON node to a [List] index value.
 class TListValue extends JSONTransformer {
+  /// The indexes to use for values.
   final List<int> indexes;
 
   TListValue(this.indexes) : super._();
@@ -207,7 +242,9 @@ class TListValue extends JSONTransformer {
   }
 }
 
+/// Transforms JSON node to a [Map] key value.
 class TMapValue extends JSONTransformer {
+  /// The keys to use for values.
   final List<String> keys;
 
   TMapValue(this.keys) : super._();
@@ -287,7 +324,9 @@ class TMapValue extends JSONTransformer {
   }
 }
 
+/// Base class for operations.
 abstract class TOperation extends JSONTransformer {
+  /// Name of the operation, like a method name.
   final String name;
 
   final bool nonCollectionOperation;
@@ -428,6 +467,7 @@ abstract class TOperation extends JSONTransformer {
   }
 }
 
+/// Converts JSON node to a Trimmed [String].
 class TTrim extends TOperation {
   static final String NAME = 'trim';
 
@@ -446,6 +486,7 @@ class TTrim extends TOperation {
   }
 }
 
+/// Converts JSON node to a Lower Case [String].
 class TLowerCase extends TOperation {
   static final String NAME = 'lc';
 
@@ -464,6 +505,7 @@ class TLowerCase extends TOperation {
   }
 }
 
+/// Converts JSON node to an Upper Case [String].
 class TUpperCase extends TOperation {
   static final String NAME = 'uc';
 
@@ -482,6 +524,10 @@ class TUpperCase extends TOperation {
   }
 }
 
+/// Converts JSON node encoding to a JSON [String].
+///
+/// Parameters:
+/// - withIndent: If [true] encodes with indentation.
 class TEncodeJSON extends TOperation {
   static final String NAME = 'encodeJson';
 
@@ -495,11 +541,12 @@ class TEncodeJSON extends TOperation {
   @override
   String computeOperation(dynamic json) {
     if (json == null) return null;
-    var withIdent = getParameter(0, false, parseBool);
-    return encodeJSON(json, withIdent: withIdent);
+    var withIndent = getParameter(0, false, parseBool);
+    return encodeJSON(json, withIndent: withIndent);
   }
 }
 
+/// Converts JSON node decoding to a JSON tree.
 class TDecodeJSON extends TOperation {
   static final String NAME = 'decodeJson';
 
@@ -518,6 +565,10 @@ class TDecodeJSON extends TOperation {
   }
 }
 
+/// Converts JSON node to a [String].
+///
+/// Parameters:
+/// - delimiter: The delimiter to use for [List.join] if needed.
 class TAsString extends TOperation {
   static final String NAME = 'asString';
 
@@ -549,6 +600,11 @@ class TAsString extends TOperation {
   }
 }
 
+/// Converts JSON node, splitting to a [List<String>].
+///
+/// Parameters:
+/// - delimiter: The delimiter [RegExp] for split call.
+/// - limit: The split limit (optional).
 class TSplit extends TOperation {
   static final String NAME = 'split';
 
@@ -573,6 +629,7 @@ class TSplit extends TOperation {
   }
 }
 
+/// Converts JSON node to a [MapEntry].
 class TMapEntry extends TOperation {
   static final String NAME = 'mapEntry';
 

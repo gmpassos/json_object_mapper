@@ -1,3 +1,9 @@
+## 1.1.2
+
+- Added: `JSONTransformer.from`.
+- Documentation of `JSONTransformer` API.
+- swiss_knife: ^2.5.10
+
 ## 1.1.1
 
 - Fix parsing of operation with empty parameters.

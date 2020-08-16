@@ -1,13 +1,13 @@
 name: json_object_mapper
 description: A simple and easy way to map Objects from JSON and to Map with support for Dart Native and Dart Web.
-version: 1.1.1
+version: 1.1.2
 homepage: https://github.com/gmpassos/json_object_mapper
 
 environment:
   sdk: '>=2.8.0 <3.0.0'
 
 dependencies:
-  swiss_knife: ^2.5.9
+  swiss_knife: ^2.5.10
     #path: ../swiss_knife
 
 dev_dependencies:
