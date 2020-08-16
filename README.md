@@ -90,7 +90,9 @@ var json = {
         ]
       };
 
-var json2 = JSONTransformer.parse('{result}.mapEntry(name,id).asMap()');
+var transformer = JSONTransformer.parse('{result}.mapEntry(name,id).asMap()');
+
+var json2 = transformer.transform(json);
 
 /// json2 = {'a': 1, 'b': 2, 'c': 3}
 

@@ -1,3 +1,7 @@
+## 1.1.1
+
+- Fix `README.md`.
+
 ## 1.1.0
 
 - Added `JSONTransformer` operations.
