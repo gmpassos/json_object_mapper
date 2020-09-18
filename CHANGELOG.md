@@ -1,3 +1,11 @@
+## 1.1.3
+
+- `JSONTransformer`: Added concatenation of values.
+- swiss_knife: ^2.5.14
+- pedantic: ^1.9.2
+- test: ^1.15.4
+- test_coverage: ^0.4.3
+
 ## 1.1.2
 
 - Added: `JSONTransformer.from`.

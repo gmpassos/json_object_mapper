@@ -77,6 +77,134 @@ void main() {
       expect(map, equals({'a': 1, 'b': 2, 'c': 3}));
     });
 
+    test('Transform: sub-entries/maps -> map of id:pos', () {
+      var json = {
+        'result': {
+          'list': [
+            {
+              'id': 1,
+              'name': 'a',
+              'pos': {'x': 10, 'y': 100}
+            },
+            {
+              'id': 2,
+              'name': 'b',
+              'pos': {'x': 20, 'y': 200}
+            },
+            {
+              'id': 3,
+              'name': 'c',
+              'pos': {'x': 30, 'y': 300}
+            },
+          ]
+        }
+      };
+
+      var jsonTransformer =
+          JSONTransformer.parse('{result}.{list}.mapEntry(id, pos).asMap()');
+
+      expect(jsonTransformer.toString(),
+          equals('{result}.{list}.mapEntry(id,pos).asMap()'));
+      _expectSelfParse(jsonTransformer);
+
+      print('-----------------------------------');
+      print(jsonTransformer);
+      print(json);
+      var map = jsonTransformer.transform(json);
+
+      print(map);
+
+      expect(
+          map,
+          equals({
+            1: {'x': 10, 'y': 100},
+            2: {'x': 20, 'y': 200},
+            3: {'x': 30, 'y': 300}
+          }));
+    });
+
+    test('Transform: sub-entries/maps -> map of id:pos/x', () {
+      var json = {
+        'result': {
+          'list': [
+            {
+              'id': 1,
+              'name': 'a',
+              'pos': {'x': 10, 'y': 100}
+            },
+            {
+              'id': 2,
+              'name': 'b',
+              'pos': {'x': 20, 'y': 200}
+            },
+            {
+              'id': 3,
+              'name': 'c',
+              'pos': {'x': 30, 'y': 300}
+            },
+          ]
+        }
+      };
+
+      var jsonTransformer = JSONTransformer.parse(
+          '{result}{list}.mapEntry(id, {pos}{x}).asMap()');
+
+      expect(jsonTransformer.toString(),
+          equals('{result}.{list}.mapEntry(id,{pos}.{x}).asMap()'));
+      _expectSelfParse(jsonTransformer);
+
+      print('-----------------------------------');
+      print(jsonTransformer);
+      print(json);
+      var map = jsonTransformer.transform(json);
+
+      print(map);
+
+      expect(map, equals({1: 10, 2: 20, 3: 30}));
+    });
+
+    test('Transform: sub-entries/maps -> map of id:pos/x,y', () {
+      var json = {
+        'result': {
+          'list': [
+            {
+              'id': 1,
+              'name': 'a',
+              'pos': {'x': 10, 'y': 100}
+            },
+            {
+              'id': 2,
+              'name': 'b',
+              'pos': {'x': 20, 'y': 200}
+            },
+            {
+              'id': 3,
+              'name': 'c',
+              'pos': {'x': 30, 'y': 300}
+            },
+          ]
+        }
+      };
+
+      var jsonTransformer = JSONTransformer.parse(
+          '{result}{list}.mapEntry(id, {pos}{x}+","+{pos}{y}).asMap()');
+
+      expect(
+          jsonTransformer.toString(),
+          equals(
+              '{result}.{list}.mapEntry(id,{pos}.{x}+","+{pos}.{y}).asMap()'));
+      _expectSelfParse(jsonTransformer);
+
+      print('-----------------------------------');
+      print(jsonTransformer);
+      print(json);
+      var map = jsonTransformer.transform(json);
+
+      print(map);
+
+      expect(map, equals({1: '10,100', 2: '20,200', 3: '30,300'}));
+    });
+
     test('Transform: list of maps -> map of name:id', () {
       var json = [
         {'id': 1, 'name': 'a', 'group': 'x'},

@@ -1,8 +1,37 @@
 import 'package:swiss_knife/swiss_knife.dart';
 
+const _REGEXP_DIALECT = {
+  'n': r'[\r\n]',
+  's': r'[ \t]',
+  'd': r'[+-]?\d+',
+  'str': r'''(?:'.*?'|".*?")''',
+  'strs': r'$str+',
+  'word': r'[\w.:_-]+',
+  'strword': r'(?:$str|$word)',
+  'mapkey': r'\{$strword\}',
+  'mapkeys': r'$mapkey(?:\.?$mapkey)*',
+  'listidx': r'\[$d\]',
+  'listidxs': r'$listidx(?:\.?$listidx)*',
+  'entry': r'(?:$mapkey|$listidx)',
+  'entries': r'$entry(?:\.?$entry)*',
+  'strentry': r'(?:$str|$entry)',
+  'strentries': r'$strentry(?:\.?$strentry)*',
+  'concat': r'$strentries(?:\+$strentries)+',
+  'param': r'(?:$concat|$word|$d|$strentries)',
+  'params': r'$param(?:\s*,\s*$param)*',
+  'funct': r'\.?\w+\(\s*$params\s*\)',
+};
+
 final RegExp _PATTERN_WORD = RegExp(r'^\w+$', multiLine: false);
 
+final RegExp _PATTERN_LIST_INDEXES =
+    regExpDialect(_REGEXP_DIALECT, r'^$listidxs$');
+
+final RegExp _PATTERN_MAP_KEYS = regExpDialect(_REGEXP_DIALECT, r'^$mapkeys$');
+
 final RegExp _LIST_DELIMITER_PATTERN = RegExp(r'\s*[,;:]\s*', multiLine: false);
+
+final RegExp _PATTERN_CONCAT = regExpDialect(_REGEXP_DIALECT, r'^$concat');
 
 bool _registerTransformersCalled = false;
 
@@ -10,8 +39,11 @@ void _registerTransformers() {
   if (_registerTransformersCalled) return;
   _registerTransformersCalled = true;
 
+  TString._register();
+  TConcatenation._register();
   TMapValue._register();
   TListValue._register();
+
   TSplit._register();
 
   TAsList._register();
@@ -178,6 +210,105 @@ abstract class JSONTransformer {
   String toString();
 }
 
+/// A text [String].
+class TString extends JSONTransformer {
+  /// The group of transformations.
+  final String text;
+
+  TString(this.text) : super._();
+
+  TString._register()
+      : text = null,
+        super._register();
+
+  @override
+  String get type => 'TString';
+
+  var PATTERN = regExpDialect(_REGEXP_DIALECT, r'''^(?:'(.*?)'|"(.*?)")$''');
+
+  @override
+  Match matches(String s) {
+    return PATTERN.firstMatch(s);
+  }
+
+  @override
+  TString fromMatch(Match match) {
+    if (match == null) return null;
+    var text = match.group(1) ?? match.group(2);
+    return TString(text);
+  }
+
+  @override
+  dynamic computeTransformation(dynamic json) {
+    return text ?? '';
+  }
+
+  @override
+  String toString() {
+    if (text.contains('"')) {
+      return "'$text'";
+    } else {
+      return '"$text"';
+    }
+  }
+}
+
+/// Concatenate transformations
+class TConcatenation extends JSONTransformer {
+  /// The group of transformations.
+  final List<JSONTransformer> group;
+
+  TConcatenation(this.group) : super._();
+
+  TConcatenation._register()
+      : group = null,
+        super._register();
+
+  @override
+  String get type => 'TConcatenation';
+
+  var PATTERN =
+      regExpDialect(_REGEXP_DIALECT, r'^($strentries(?:\+$strentries)+)$');
+
+  @override
+  Match matches(String s) {
+    return PATTERN.firstMatch(s);
+  }
+
+  static final RegExp ENTRY_PATTERN =
+      regExpDialect(_REGEXP_DIALECT, r'(?:($str)|($entries))');
+
+  @override
+  TConcatenation fromMatch(Match match) {
+    if (match == null) return null;
+    var entriesStr = match.group(1);
+    var entries = ENTRY_PATTERN.allMatches(entriesStr).map((m) {
+      return m.group(1) ?? m.group(2);
+    }).toList();
+    var group = entries.map((e) => JSONTransformer.parse(e)).toList();
+    return TConcatenation(group);
+  }
+
+  @override
+  dynamic computeTransformation(dynamic json) {
+    return group.map((t) {
+      var v = t.transform(json);
+      return v;
+    }).join();
+  }
+
+  String groupsToString() {
+    if (group == null || group.isEmpty) return '';
+    return group.map((t) => t.toString()).join('+');
+  }
+
+  @override
+  String toString() {
+    var groups = groupsToString();
+    return '$groups${toStringThen('.')}';
+  }
+}
+
 /// Transforms JSON node to a [List] index value.
 class TListValue extends JSONTransformer {
   /// The indexes to use for values.
@@ -203,7 +334,6 @@ class TListValue extends JSONTransformer {
   TListValue fromMatch(Match match) {
     if (match == null) return null;
     var indexesStr = match.group(1);
-    print(_LIST_DELIMITER_PATTERN);
     var indexes =
         indexesStr.split(_LIST_DELIMITER_PATTERN).map(parseInt).toList();
     return TListValue(indexes);
@@ -349,8 +479,12 @@ abstract class TOperation extends JSONTransformer {
   RegExp get _pattern {
     var pattern = OPS_PATTERN[name];
     if (pattern != null) return pattern;
-    pattern = RegExp('^$name'
-        r'''\(\s*((?:".*?"|'.*?'|[^\s\(\),]+?)(?:\s*,\s*(?:".*?"|'.*?'|[^\s\(\),]+?))*)?\s*\)''');
+
+    pattern = regExpDialect(
+        _REGEXP_DIALECT,
+        '^$name'
+        r'\(\s*($params)?\s*\)');
+
     OPS_PATTERN[name] = pattern;
     return pattern;
   }
@@ -371,8 +505,8 @@ abstract class TOperation extends JSONTransformer {
 
   TOperation fromParameters([List parameters]);
 
-  static final RegExp _PARAMETERS_DELIMITER_PATTERN =
-      RegExp(r'\s*,\s*', multiLine: false);
+  static final RegExp _PARAMETERS_PATTERN =
+      regExpDialect(_REGEXP_DIALECT, r'^\s*($param)(?:\s*,\s*|\s*$)');
 
   List parseParameters(String s) {
     if (s == null) return null;
@@ -381,17 +515,47 @@ abstract class TOperation extends JSONTransformer {
 
     if (s.length == 1) return [s];
 
-    var params =
-        s.split(_PARAMETERS_DELIMITER_PATTERN).map(_parsePrimitive).toList();
-    return params;
+    var params = <String>[];
+
+    while (s.isNotEmpty) {
+      var m = _PARAMETERS_PATTERN.firstMatch(s);
+      if (m != null) {
+        var val = m.group(1);
+        if (val != null) {
+          params.add(val);
+        }
+        s = s.substring(m.end);
+      } else {
+        params.add(s.trim());
+        break;
+      }
+    }
+
+    var parsedParameters = params.map(_parsePrimitive).toList();
+
+    return parsedParameters;
   }
 
   dynamic _parsePrimitive(String s) {
     if (s == null) return null;
     s = s.trim();
-    if (s.isEmpty) return '';
-    if (isInt(s)) return parseInt(s);
-    if (isDouble(s)) return parseDouble(s);
+
+    if (s.isEmpty) {
+      return '';
+    } else if (isInt(s)) {
+      return parseInt(s);
+    } else if (isDouble(s)) {
+      return parseDouble(s);
+    } else if (_PATTERN_CONCAT.hasMatch(s)) {
+      var t = JSONTransformer.parse(s);
+      return t;
+    } else if (_PATTERN_MAP_KEYS.hasMatch(s)) {
+      var t = JSONTransformer.parse(s);
+      return t;
+    } else if (_PATTERN_LIST_INDEXES.hasMatch(s)) {
+      var t = JSONTransformer.parse(s);
+      return t;
+    }
     return s;
   }
 
@@ -400,8 +564,14 @@ abstract class TOperation extends JSONTransformer {
     var s = v.toString();
 
     if (v is num) {
-      return v.toString();
+      return s;
+    } else if (v is JSONTransformer) {
+      return s;
     } else if (_PATTERN_WORD.hasMatch(s)) {
+      return s;
+    } else if (_PATTERN_LIST_INDEXES.hasMatch(s)) {
+      return s;
+    } else if (_PATTERN_MAP_KEYS.hasMatch(s)) {
       return s;
     } else if (s.contains('"')) {
       return "'$s'";
@@ -427,7 +597,7 @@ abstract class TOperation extends JSONTransformer {
     if (index < parameters.length) {
       var val = parameters[index];
       if (val != null) {
-        return parser(val);
+        return parser != null ? parser(val) : val;
       } else {
         return def;
       }
@@ -660,8 +830,8 @@ class TMapEntry extends TOperation {
       if (json.isEmpty) {
         return null;
       } else {
-        var keyName = getParameter(0, null, parseString);
-        var valName = getParameter(1, null, parseString);
+        var keyName = getParameter(0);
+        var valName = getParameter(1);
 
         if (keyName == null || valName == null) {
           var keys = json.keys.toList();
@@ -674,13 +844,26 @@ class TMapEntry extends TOperation {
             keys.remove(valName);
           }
 
-          keyName ??= parseString(keys.removeAt(0));
-          valName ??= parseString(keys.removeAt(0));
+          keyName ??= keys.removeAt(0);
+          valName ??= keys.removeAt(0);
         }
-        return MapEntry(json[keyName], json[valName]);
+
+        var key = _resolveMapValue(json, keyName);
+        var val = _resolveMapValue(json, valName);
+
+        return MapEntry(key, val);
       }
     } else {
       return MapEntry('/', json);
+    }
+  }
+
+  dynamic _resolveMapValue(Map json, dynamic key) {
+    if (key is JSONTransformer) {
+      return key.transform(json);
+    } else {
+      var keyName = parseString(key);
+      return json[keyName];
     }
   }
 }
