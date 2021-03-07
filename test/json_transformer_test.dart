@@ -101,7 +101,7 @@ void main() {
       };
 
       var jsonTransformer =
-          JSONTransformer.parse('{result}.{list}.mapEntry(id, pos).asMap()');
+          JSONTransformer.parse('{result}.{list}.mapEntry(id, pos).asMap()')!;
 
       expect(jsonTransformer.toString(),
           equals('{result}.{list}.mapEntry(id,pos).asMap()'));
@@ -147,7 +147,7 @@ void main() {
       };
 
       var jsonTransformer = JSONTransformer.parse(
-          '{result}{list}.mapEntry(id, {pos}{x}).asMap()');
+          '{result}{list}.mapEntry(id, {pos}{x}).asMap()')!;
 
       expect(jsonTransformer.toString(),
           equals('{result}.{list}.mapEntry(id,{pos}.{x}).asMap()'));
@@ -187,7 +187,7 @@ void main() {
       };
 
       var jsonTransformer = JSONTransformer.parse(
-          '{result}{list}.mapEntry(id, {pos}{x}+","+{pos}{y}).asMap()');
+          '{result}{list}.mapEntry(id, {pos}{x}+","+{pos}{y}).asMap()')!;
 
       expect(
           jsonTransformer.toString(),

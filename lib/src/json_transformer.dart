@@ -1,4 +1,5 @@
 import 'package:swiss_knife/swiss_knife.dart';
+import 'package:swiss_knife/src/collections.dart';
 
 const _REGEXP_DIALECT = {
   'n': r'[\r\n]',
@@ -70,7 +71,7 @@ abstract class JSONTransformer {
   }
 
   /// Returns a [JSONTransformer] from [transformers]. Parses if needed.
-  factory JSONTransformer.from(dynamic transformers) {
+  static JSONTransformer? from(Object? transformers) {
     if (transformers == null) return null;
 
     if (transformers is JSONTransformer) return transformers;
@@ -82,10 +83,10 @@ abstract class JSONTransformer {
     if (transformers is List) {
       var list = transformers
           .map((e) => JSONTransformer.from(e))
-          .where((e) => e != null)
+          .whereType<JSONTransformer>()
           .toList();
 
-      if (list == null || list.isEmpty) {
+      if (list.isEmpty) {
         return null;
       }
 
@@ -98,21 +99,21 @@ abstract class JSONTransformer {
   }
 
   /// Parses [transformers] to a [JSONTransformer] chain.
-  factory JSONTransformer.parse(String transformers) {
+  static JSONTransformer? parse(String? transformers) {
     _registerTransformers();
 
     if (transformers == null) return null;
 
     transformers = _trimTransformers(transformers);
 
-    JSONTransformer root;
+    JSONTransformer? root;
 
-    JSONTransformer t;
+    JSONTransformer? t;
 
     LOOP:
-    while (transformers.isNotEmpty) {
+    while (transformers!.isNotEmpty) {
       for (var tRegistered in _registeredTransformers.values) {
-        var match = tRegistered.matches(transformers);
+        var match = tRegistered.matches(transformers!);
 
         if (match != null) {
           var t2 = tRegistered.fromMatch(match);
@@ -152,57 +153,58 @@ abstract class JSONTransformer {
 
   String get type;
 
-  Match matches(String s);
+  Match? matches(String s);
 
-  JSONTransformer fromMatch(Match match);
+  JSONTransformer? fromMatch(Match match);
 
-  List<JSONTransformer> _then;
+  List<JSONTransformer>? _then;
 
   JSONTransformer clearThen() {
-    if (_then != null) _then.clear();
+    if (_then != null) _then!.clear();
     return this;
   }
 
   /// Other [JSONTransformer] to apply after this [transform].
-  JSONTransformer then(JSONTransformer t1,
-      [JSONTransformer t2,
-      JSONTransformer t3,
-      JSONTransformer t4,
-      JSONTransformer t5,
-      JSONTransformer t6,
-      JSONTransformer t7,
-      JSONTransformer t8,
-      JSONTransformer t9,
-      JSONTransformer t10]) {
-    var list = <JSONTransformer>[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10];
-    list.removeWhere((t) => t == null);
+  JSONTransformer then(JSONTransformer? t1,
+      [JSONTransformer? t2,
+      JSONTransformer? t3,
+      JSONTransformer? t4,
+      JSONTransformer? t5,
+      JSONTransformer? t6,
+      JSONTransformer? t7,
+      JSONTransformer? t8,
+      JSONTransformer? t9,
+      JSONTransformer? t10]) {
+    var list = [t1, t2, t3, t4, t5, t6, t7, t8, t9, t10]
+        .whereType<JSONTransformer>()
+        .toList();
     return thenChain(list);
   }
 
-  JSONTransformer thenChain(List<JSONTransformer> then) {
+  JSONTransformer thenChain(List<JSONTransformer>? then) {
     if (then == null || then.isEmpty) return this;
     _then ??= [];
-    _then.addAll(then);
+    _then!.addAll(then);
     return this;
   }
 
   /// Transforms [json] using chain operations.
-  dynamic transform(dynamic json) {
+  dynamic transform(Object? json) {
     var transform = computeTransformation(json);
     if (_then != null) {
-      for (var t in _then) {
+      for (var t in _then!) {
         transform = t.transform(transform);
       }
     }
     return transform;
   }
 
-  dynamic computeTransformation(dynamic json);
+  dynamic computeTransformation(Object? json);
 
   String toStringThen(String prefix) {
-    if (_then == null || _then.isEmpty) return '';
-    if (_then.length == 1) return '$prefix${_then.first}';
-    return '$prefix${_then.join('.')}';
+    if (_then == null || _then!.isEmpty) return '';
+    if (_then!.length == 1) return '$prefix${_then!.first}';
+    return '$prefix${_then!.join('.')}';
   }
 
   /// Returns this chain of operations as [String].
@@ -218,7 +220,7 @@ class TString extends JSONTransformer {
   TString(this.text) : super._();
 
   TString._register()
-      : text = null,
+      : text = '',
         super._register();
 
   @override
@@ -227,20 +229,19 @@ class TString extends JSONTransformer {
   var PATTERN = regExpDialect(_REGEXP_DIALECT, r'''^(?:'(.*?)'|"(.*?)")$''');
 
   @override
-  Match matches(String s) {
+  Match? matches(String s) {
     return PATTERN.firstMatch(s);
   }
 
   @override
-  TString fromMatch(Match match) {
-    if (match == null) return null;
-    var text = match.group(1) ?? match.group(2);
+  TString? fromMatch(Match match) {
+    var text = match.group(1) ?? match.group(2)!;
     return TString(text);
   }
 
   @override
-  dynamic computeTransformation(dynamic json) {
-    return text ?? '';
+  String computeTransformation(Object? json) {
+    return text;
   }
 
   @override
@@ -261,7 +262,7 @@ class TConcatenation extends JSONTransformer {
   TConcatenation(this.group) : super._();
 
   TConcatenation._register()
-      : group = null,
+      : group = [],
         super._register();
 
   @override
@@ -271,7 +272,7 @@ class TConcatenation extends JSONTransformer {
       regExpDialect(_REGEXP_DIALECT, r'^($strentries(?:\+$strentries)+)$');
 
   @override
-  Match matches(String s) {
+  Match? matches(String s) {
     return PATTERN.firstMatch(s);
   }
 
@@ -280,17 +281,16 @@ class TConcatenation extends JSONTransformer {
 
   @override
   TConcatenation fromMatch(Match match) {
-    if (match == null) return null;
-    var entriesStr = match.group(1);
+    var entriesStr = match.group(1)!;
     var entries = ENTRY_PATTERN.allMatches(entriesStr).map((m) {
       return m.group(1) ?? m.group(2);
     }).toList();
-    var group = entries.map((e) => JSONTransformer.parse(e)).toList();
+    var group = entries.map((e) => JSONTransformer.parse(e)!).toList();
     return TConcatenation(group);
   }
 
   @override
-  dynamic computeTransformation(dynamic json) {
+  String computeTransformation(Object? json) {
     return group.map((t) {
       var v = t.transform(json);
       return v;
@@ -298,7 +298,7 @@ class TConcatenation extends JSONTransformer {
   }
 
   String groupsToString() {
-    if (group == null || group.isEmpty) return '';
+    if (group.isEmpty) return '';
     return group.map((t) => t.toString()).join('+');
   }
 
@@ -317,7 +317,7 @@ class TListValue extends JSONTransformer {
   TListValue(this.indexes) : super._();
 
   TListValue._register()
-      : indexes = null,
+      : indexes = [],
         super._register();
 
   @override
@@ -326,23 +326,24 @@ class TListValue extends JSONTransformer {
   static final RegExp PATTERN = RegExp(r'^\[\s*(\d+(?:\s*,\s*\d+)?\s*)\]');
 
   @override
-  Match matches(String s) {
+  Match? matches(String s) {
     return PATTERN.firstMatch(s);
   }
 
   @override
   TListValue fromMatch(Match match) {
-    if (match == null) return null;
-    var indexesStr = match.group(1);
-    var indexes =
-        indexesStr.split(_LIST_DELIMITER_PATTERN).map(parseInt).toList();
+    var indexesStr = match.group(1)!;
+    var indexes = indexesStr
+        .split(_LIST_DELIMITER_PATTERN)
+        .map((e) => parseInt(e)!)
+        .toList();
     return TListValue(indexes);
   }
 
   @override
-  dynamic computeTransformation(dynamic json) {
+  dynamic computeTransformation(Object? json) {
     if (json is List) {
-      if (indexes == null || indexes.isEmpty) {
+      if (indexes.isEmpty) {
         return json;
       } else if (indexes.length == 1) {
         var index = indexes.first;
@@ -351,7 +352,7 @@ class TListValue extends JSONTransformer {
         return indexes.map((i) => _getIndexValue(json, i)).toList();
       }
     } else if (json is Map) {
-      if (indexes == null || indexes.isEmpty) {
+      if (indexes.isEmpty) {
         return json.values;
       } else if (indexes.length == 1) {
         var index = indexes[0];
@@ -365,7 +366,7 @@ class TListValue extends JSONTransformer {
 
   @override
   String toString() {
-    var idx = indexes == null || indexes.isEmpty
+    var idx = indexes.isEmpty
         ? '*'
         : (indexes.length == 1 ? '${indexes[0]}' : indexes.join(','));
     return '[$idx]${toStringThen('.')}';
@@ -380,7 +381,7 @@ class TMapValue extends JSONTransformer {
   TMapValue(this.keys) : super._();
 
   TMapValue._register()
-      : keys = null,
+      : keys = [],
         super._register();
 
   @override
@@ -390,7 +391,7 @@ class TMapValue extends JSONTransformer {
       r'''^\{\s*((?:".*?"|'.*?'|\w+)(?:\s*,\s*(?:".*?"|'.*?'|\w+))?\s*)\}''');
 
   @override
-  Match matches(String s) {
+  Match? matches(String s) {
     return PATTERN.firstMatch(s);
   }
 
@@ -398,19 +399,18 @@ class TMapValue extends JSONTransformer {
 
   @override
   TMapValue fromMatch(Match match) {
-    if (match == null) return null;
-    var keysStr = match.group(1);
+    var keysStr = match.group(1)!;
     var keys = STRING_PATTERN
         .allMatches(keysStr)
-        .map((m) => m.group(1) ?? m.group(2) ?? m.group(3))
+        .map((m) => (m.group(1) ?? m.group(2) ?? m.group(3))!)
         .toList();
     return TMapValue(keys);
   }
 
   @override
-  dynamic computeTransformation(dynamic json) {
+  dynamic computeTransformation(Object? json) {
     if (json is Map) {
-      if (keys == null || keys.isEmpty) {
+      if (keys.isEmpty) {
         return json.values;
       } else if (keys.length == 1) {
         var key = keys.first;
@@ -419,7 +419,7 @@ class TMapValue extends JSONTransformer {
         return keys.map((k) => _getKeyValue(json, k)).toList();
       }
     } else if (json is List) {
-      if (keys == null || keys.isEmpty) {
+      if (keys.isEmpty) {
         return json;
       } else {
         return json.map(computeTransformation).toList();
@@ -429,8 +429,6 @@ class TMapValue extends JSONTransformer {
   }
 
   String _keyToString(String s) {
-    if (s == null) return '*';
-
     if (_PATTERN_WORD.hasMatch(s)) {
       return s;
     } else if (s.contains('"')) {
@@ -443,7 +441,7 @@ class TMapValue extends JSONTransformer {
   }
 
   String keysToString() {
-    if (keys == null || keys.isEmpty) return '*';
+    if (keys.isEmpty) return '*';
     return keys.map(_keyToString).join(',');
   }
 
@@ -460,14 +458,14 @@ abstract class TOperation extends JSONTransformer {
   final String name;
 
   final bool nonCollectionOperation;
-  final List parameters;
+  final List? parameters;
 
   TOperation(this.name, this.nonCollectionOperation, [this.parameters])
       : super._();
 
   TOperation._register(String name)
       : name = name,
-        nonCollectionOperation = null,
+        nonCollectionOperation = false,
         parameters = null,
         super._register();
 
@@ -490,25 +488,24 @@ abstract class TOperation extends JSONTransformer {
   }
 
   @override
-  Match matches(String s) {
+  Match? matches(String s) {
     var pattern = _pattern;
     return pattern.firstMatch(s);
   }
 
   @override
   TOperation fromMatch(Match match) {
-    if (match == null) return null;
     var paramsStr = match.group(1);
     var params = parseParameters(paramsStr);
     return fromParameters(params);
   }
 
-  TOperation fromParameters([List parameters]);
+  TOperation fromParameters([List? parameters]);
 
   static final RegExp _PARAMETERS_PATTERN =
       regExpDialect(_REGEXP_DIALECT, r'^\s*($param)(?:\s*,\s*|\s*$)');
 
-  List parseParameters(String s) {
+  List? parseParameters(String? s) {
     if (s == null) return null;
     s = s.trim();
     if (s.isEmpty) return null;
@@ -517,7 +514,7 @@ abstract class TOperation extends JSONTransformer {
 
     var params = <String>[];
 
-    while (s.isNotEmpty) {
+    while (s!.isNotEmpty) {
       var m = _PARAMETERS_PATTERN.firstMatch(s);
       if (m != null) {
         var val = m.group(1);
@@ -537,7 +534,6 @@ abstract class TOperation extends JSONTransformer {
   }
 
   dynamic _parsePrimitive(String s) {
-    if (s == null) return null;
     s = s.trim();
 
     if (s.isEmpty) {
@@ -559,8 +555,8 @@ abstract class TOperation extends JSONTransformer {
     return s;
   }
 
-  String _primitiveToString(dynamic v, bool singleParameter) {
-    if (v == null) return v;
+  String? _primitiveToString(Object? v, bool singleParameter) {
+    if (v == null) return null;
     var s = v.toString();
 
     if (v is num) {
@@ -584,18 +580,17 @@ abstract class TOperation extends JSONTransformer {
     }
   }
 
-  List subParameters(int offset) {
+  List? subParameters(int offset) {
     if (parameters == null) return null;
-    offset ??= 0;
     if (offset == 0) return parameters;
-    if (offset >= parameters.length) return [];
-    return parameters.sublist(offset);
+    if (offset >= parameters!.length) return [];
+    return parameters!.sublist(offset);
   }
 
-  T getParameter<T>(int index, [T def, T Function(dynamic v) parser]) {
+  T? getParameter<T>(int index, [T? def, T Function(Object v)? parser]) {
     if (parameters == null || index < 0) return def;
-    if (index < parameters.length) {
-      var val = parameters[index];
+    if (index < parameters!.length) {
+      var val = parameters![index];
       if (val != null) {
         return parser != null ? parser(val) : val;
       } else {
@@ -606,7 +601,7 @@ abstract class TOperation extends JSONTransformer {
   }
 
   @override
-  dynamic computeTransformation(dynamic json) {
+  dynamic computeTransformation(Object? json) {
     if (json == null) return [];
 
     if (nonCollectionOperation) {
@@ -620,12 +615,12 @@ abstract class TOperation extends JSONTransformer {
     }
   }
 
-  dynamic computeOperation(dynamic json);
+  dynamic computeOperation(Object? json);
 
   String parametersToString() {
-    if (parameters == null || parameters.isEmpty) return '';
-    var singleParameter = parameters.length == 1;
-    return parameters
+    if (parameters == null || parameters!.isEmpty) return '';
+    var singleParameter = parameters!.length == 1;
+    return parameters!
         .map((p) => _primitiveToString(p, singleParameter))
         .join(',');
   }
@@ -641,15 +636,15 @@ abstract class TOperation extends JSONTransformer {
 class TTrim extends TOperation {
   static final String NAME = 'trim';
 
-  TTrim([List parameters]) : super(NAME, false, parameters);
+  TTrim([List? parameters]) : super(NAME, false, parameters);
 
   TTrim._register() : super._register(NAME);
 
   @override
-  TTrim fromParameters([List parameters]) => TTrim(parameters);
+  TTrim fromParameters([List? parameters]) => TTrim(parameters);
 
   @override
-  String computeOperation(dynamic json) {
+  String? computeOperation(Object? json) {
     if (json == null) return null;
     var s = TAsString(parameters).transform(json) as String;
     return s.trim();
@@ -660,15 +655,15 @@ class TTrim extends TOperation {
 class TLowerCase extends TOperation {
   static final String NAME = 'lc';
 
-  TLowerCase([List parameters]) : super(NAME, false, parameters);
+  TLowerCase([List? parameters]) : super(NAME, false, parameters);
 
   TLowerCase._register() : super._register(NAME);
 
   @override
-  TLowerCase fromParameters([List parameters]) => TLowerCase(parameters);
+  TLowerCase fromParameters([List? parameters]) => TLowerCase(parameters);
 
   @override
-  String computeOperation(dynamic json) {
+  String? computeOperation(Object? json) {
     if (json == null) return null;
     var s = TAsString(parameters).transform(json) as String;
     return s.toLowerCase();
@@ -679,15 +674,15 @@ class TLowerCase extends TOperation {
 class TUpperCase extends TOperation {
   static final String NAME = 'uc';
 
-  TUpperCase([List parameters]) : super(NAME, false, parameters);
+  TUpperCase([List? parameters]) : super(NAME, false, parameters);
 
   TUpperCase._register() : super._register(NAME);
 
   @override
-  TUpperCase fromParameters([List parameters]) => TUpperCase(parameters);
+  TUpperCase fromParameters([List? parameters]) => TUpperCase(parameters);
 
   @override
-  String computeOperation(dynamic json) {
+  String? computeOperation(Object? json) {
     if (json == null) return null;
     var s = TAsString(parameters).transform(json) as String;
     return s.toUpperCase();
@@ -701,17 +696,17 @@ class TUpperCase extends TOperation {
 class TEncodeJSON extends TOperation {
   static final String NAME = 'encodeJson';
 
-  TEncodeJSON([List parameters]) : super(NAME, true, parameters);
+  TEncodeJSON([List? parameters]) : super(NAME, true, parameters);
 
   TEncodeJSON._register() : super._register(NAME);
 
   @override
-  TEncodeJSON fromParameters([List parameters]) => TEncodeJSON(parameters);
+  TEncodeJSON fromParameters([List? parameters]) => TEncodeJSON(parameters);
 
   @override
-  String computeOperation(dynamic json) {
-    if (json == null) return null;
-    var withIndent = getParameter(0, false, parseBool);
+  String computeOperation(Object? json) {
+    if (json == null) return 'null';
+    var withIndent = getParameter(0, false, parseBool)!;
     return encodeJSON(json, withIndent: withIndent);
   }
 }
@@ -720,17 +715,17 @@ class TEncodeJSON extends TOperation {
 class TDecodeJSON extends TOperation {
   static final String NAME = 'decodeJson';
 
-  TDecodeJSON([List parameters]) : super(NAME, true, parameters);
+  TDecodeJSON([List? parameters]) : super(NAME, true, parameters);
 
   TDecodeJSON._register() : super._register(NAME);
 
   @override
-  TDecodeJSON fromParameters([List parameters]) => TDecodeJSON(parameters);
+  TDecodeJSON fromParameters([List? parameters]) => TDecodeJSON(parameters);
 
   @override
-  String computeOperation(dynamic json) {
+  String? computeOperation(Object? json) {
     if (json == null) return null;
-    var s = TAsString(parameters).transform(json) as String;
+    var s = TAsString(parameters).transform(json) as String?;
     return parseJSON(s);
   }
 }
@@ -742,25 +737,25 @@ class TDecodeJSON extends TOperation {
 class TAsString extends TOperation {
   static final String NAME = 'asString';
 
-  TAsString([List parameters]) : super(NAME, true, parameters);
+  TAsString([List? parameters]) : super(NAME, true, parameters);
 
   TAsString._register() : super._register(NAME);
 
   @override
-  TAsString fromParameters([List parameters]) => TAsString(parameters);
+  TAsString fromParameters([List? parameters]) => TAsString(parameters);
 
   @override
-  String computeOperation(dynamic json) {
+  String? computeOperation(Object? json) {
     if (json == null) {
       return '';
     } else if (json is String) {
       return json;
     } else if (json is List) {
-      var delimiter = getParameter(0, '');
+      var delimiter = getParameter(0, '')!;
       return json.join(delimiter);
     } else if (json is Map) {
       var delimiterK = getParameter(0, '');
-      var delimiterV = getParameter(1, '');
+      var delimiterV = getParameter(1, '')!;
       return json.entries
           .map((e) => '${e.key}$delimiterK${e.value}')
           .join(delimiterV);
@@ -778,19 +773,19 @@ class TAsString extends TOperation {
 class TSplit extends TOperation {
   static final String NAME = 'split';
 
-  TSplit([List parameters]) : super(NAME, false, parameters);
+  TSplit([List? parameters]) : super(NAME, false, parameters);
 
   TSplit._register() : super._register(NAME);
 
   @override
-  TSplit fromParameters([List parameters]) => TSplit(parameters);
+  TSplit fromParameters([List? parameters]) => TSplit(parameters);
 
   @override
-  dynamic computeOperation(dynamic json) {
+  dynamic computeOperation(Object? json) {
     var s = TAsString(subParameters(2)).transform(json) as String;
 
-    var delimiter = getParameter(0, null, parseString);
-    var limit = getParameter(1, null, parseInt);
+    var delimiter = getParameter(0, null, (v) => parseString(v)!);
+    var limit = getParameter(1, null, (v) => parseInt(v)!);
 
     var pattern =
         delimiter != null ? RegExp(delimiter) : _LIST_DELIMITER_PATTERN;
@@ -803,15 +798,15 @@ class TSplit extends TOperation {
 class TMapEntry extends TOperation {
   static final String NAME = 'mapEntry';
 
-  TMapEntry([List parameters]) : super(NAME, false, parameters);
+  TMapEntry([List? parameters]) : super(NAME, false, parameters);
 
   TMapEntry._register() : super._register(NAME);
 
   @override
-  TMapEntry fromParameters([List parameters]) => TMapEntry(parameters);
+  TMapEntry fromParameters([List? parameters]) => TMapEntry(parameters);
 
   @override
-  MapEntry computeOperation(dynamic json) {
+  MapEntry? computeOperation(Object? json) {
     if (json == null) return MapEntry(null, null);
 
     if (json is MapEntry) {
@@ -858,7 +853,7 @@ class TMapEntry extends TOperation {
     }
   }
 
-  dynamic _resolveMapValue(Map json, dynamic key) {
+  dynamic _resolveMapValue(Map json, Object key) {
     if (key is JSONTransformer) {
       return key.transform(json);
     } else {
@@ -871,15 +866,15 @@ class TMapEntry extends TOperation {
 class TAsList extends TOperation {
   static final String NAME = 'asList';
 
-  TAsList([List parameters]) : super(NAME, true, parameters);
+  TAsList([List? parameters]) : super(NAME, true, parameters);
 
   TAsList._register() : super._register(NAME);
 
   @override
-  TAsList fromParameters([List parameters]) => TAsList(parameters);
+  TAsList fromParameters([List? parameters]) => TAsList(parameters);
 
   @override
-  List computeOperation(dynamic json) {
+  List? computeOperation(Object? json) {
     if (json == null) {
       return [];
     } else if (json is Iterable) {
@@ -904,21 +899,23 @@ class TAsList extends TOperation {
 class TAsMap extends TOperation {
   static final String NAME = 'asMap';
 
-  TAsMap([List parameters]) : super(NAME, true, parameters);
+  TAsMap([List? parameters]) : super(NAME, true, parameters);
 
   TAsMap._register() : super._register(NAME);
 
   @override
-  TAsMap fromParameters([List parameters]) => TAsMap(parameters);
+  TAsMap fromParameters([List? parameters]) => TAsMap(parameters);
 
   @override
-  Map computeOperation(dynamic json) {
+  Map? computeOperation(Object? json) {
     if (json == null) {
       return {};
     } else if (json is Iterable) {
       var tMapEntry = TMapEntry(parameters);
-      var entries =
-          json.map((e) => tMapEntry.transform(e) as MapEntry).toList();
+      var entries = json
+          .map((e) => tMapEntry.transform(e) as MapEntry?)
+          .whereType<MapEntry>()
+          .toList();
       return Map.fromEntries(entries);
     } else if (json is MapEntry) {
       return Map.fromEntries([json]);
@@ -943,8 +940,8 @@ class TAsMap extends TOperation {
   }
 }
 
-T _getIndexValue<T>(List<T> list, int index) {
-  if (list == null || list.isEmpty) return null;
+T? _getIndexValue<T>(List<T> list, int index) {
+  if (list.isEmpty) return null;
   var length = list.length;
 
   if (index >= length) {
@@ -956,8 +953,8 @@ T _getIndexValue<T>(List<T> list, int index) {
   return list[index];
 }
 
-V _getKeyValue<K, V>(Map<K, V> map, K key) {
-  if (map == null || map.isEmpty) return null;
+V? _getKeyValue<K, V>(Map<K, V> map, K key) {
+  if (map.isEmpty) return null;
 
   var val = map[key];
   if (val != null) return val;

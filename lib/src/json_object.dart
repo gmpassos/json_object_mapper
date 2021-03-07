@@ -33,13 +33,13 @@ abstract class JSONObject extends JSONObjectBaseImpl {
   }
 
   /// Initializes this instance from a Map.
-  void initializeFromMap(Map jsonMap) {
+  void initializeFromMap(Map? jsonMap) {
     var fields = getObjectFields();
 
     var values = [];
 
     for (var k in fields) {
-      var v = jsonMap[k];
+      var v = jsonMap![k];
       values.add(v);
     }
 

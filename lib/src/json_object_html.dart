@@ -93,7 +93,7 @@ abstract class JSONObjectBaseImpl extends JSONObjectBase {
 
   static List<String> _getObjectFieldsNamesImpl(JSONObjectBase instance) {
     try {
-      List fieldsKeys =
+      List? fieldsKeys =
           context.callMethod('_JsonObject_get_fields_keys', [instance]);
 
       fieldsKeys ??= instance.getObjectFields();
@@ -194,12 +194,10 @@ abstract class JSONObjectBaseImpl extends JSONObjectBase {
     return checkOk;
   }
 
-  static String _isValidObjectType(JSONObjectBase instance) {
+  static String? _isValidObjectType(JSONObjectBase instance) {
     var fields = instance.getObjectFields();
-    if (fields == null) return 'null fields';
 
     var values = _getObjectFieldsValuesImpl(instance);
-    if (values == null) return 'null values';
 
     if (fields.length != values.length) return 'fields.length != values.length';
 
@@ -227,9 +225,6 @@ abstract class JSONObjectBaseImpl extends JSONObjectBase {
 
   static bool _isEqualsList(List l1, List l2) {
     if (l1 == l2) return true;
-
-    if (l1 == null) return false;
-    if (l2 == null) return false;
 
     if (l1.length != l2.length) return false;
 

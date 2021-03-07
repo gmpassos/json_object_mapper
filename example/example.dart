@@ -1,8 +1,8 @@
 import 'package:json_object_mapper/json_object_mapper.dart';
 
 class User extends JSONObject {
-  String username;
-  String email;
+  String? username;
+  String? email;
 
   User.fromFields(String username, String email) {
     this.username = username;

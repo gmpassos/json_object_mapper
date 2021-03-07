@@ -3,7 +3,7 @@ import 'dart:mirrors';
 import 'json_object_base.dart';
 
 abstract class JSONObjectBaseImpl extends JSONObjectBase {
-  static List<String> _getObjectFieldsNames(JSONObjectBase instance) {
+  static List<String>? _getObjectFieldsNames(JSONObjectBase instance) {
     try {
       var names = <String>[];
 
@@ -27,7 +27,7 @@ abstract class JSONObjectBaseImpl extends JSONObjectBase {
     }
   }
 
-  static List _getObjectFieldsValues(JSONObjectBase instance) {
+  static List? _getObjectFieldsValues(JSONObjectBase instance) {
     try {
       var values = [];
 
@@ -80,12 +80,12 @@ abstract class JSONObjectBaseImpl extends JSONObjectBase {
 
   @override
   List<String> getObjectFieldsDefault() {
-    return _getObjectFieldsNames(this);
+    return _getObjectFieldsNames(this)!;
   }
 
   @override
   List getObjectValues() {
-    return _getObjectFieldsValues(this);
+    return _getObjectFieldsValues(this)!;
   }
 
   @override
